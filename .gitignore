@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Generated investigation reports
+investigation-*.html
+investigation-*.md
+
+# Local settings (user-specific permissions)
+.claude/settings.local.json
