@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>インシデント調査レポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #FFFFFF;
+  --bg-tint: #FAFAFA;
+  --border: #E8E8E8;
+  --text-primary: #0D0D0D;
+  --text-secondary: #7A7A7A;
+  --text-muted: #B0B0B0;
+  --red: #E42313;
+  --green: #22C55E;
+  --amber: #D97706;
+  --green-bg: rgba(34,197,94,0.1);
+  --red-bg: rgba(228,35,19,0.08);
+  --amber-bg: rgba(217,119,6,0.08);
+  --sidebar-w: 280px;
+  --header-h: auto;
+  --transition: 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header (full width, above columns) ── */
+.report-header {
+  border-bottom: 1px solid var(--border);
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.source-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+  border-left: 3px solid var(--red);
+  padding-left: 16px;
+}
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--red);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.source-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.source-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.init-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-tint);
+  border: 1px solid var(--border);
+  padding: 8px 20px;
+  flex-shrink: 0;
+}
+
+.init-dot {
+  width: 20px;
+  height: 20px;
+  background: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.init-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.init-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── 2-column layout ── */
+.layout {
+  display: flex;
+  min-height: calc(100vh - 100px);
+}
+
+/* ── Left Sidebar (sticky) ── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px 0;
+  background: var(--bg);
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.sidebar-tree {
+  list-style: none;
+  padding: 0;
+}
+
+.tree-node {
+  position: relative;
+}
+
+.tree-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  border-left: 3px solid transparent;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.tree-link:hover {
+  background: var(--bg-tint);
+}
+
+.tree-link.active {
+  border-left-color: var(--red);
+  background: var(--red-bg);
+}
+
+.tree-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+.tree-dot.validated { background: var(--red); }
+.tree-dot.inconclusive { background: var(--amber); }
+.tree-dot.invalidated { background: var(--border); }
+
+.tree-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-link.active .tree-label {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.tree-id {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Sub-nodes indentation + connecting lines */
+.tree-children {
+  list-style: none;
+  padding: 0;
+  margin-left: 20px;
+  position: relative;
+}
+
+.tree-children::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 14px;
+  width: 1px;
+  background: var(--border);
+}
+
+.tree-children .tree-link {
+  padding-left: 36px;
+  position: relative;
+}
+
+.tree-children .tree-link::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Conclusion node in sidebar */
+.tree-conclusion {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.tree-conclusion .tree-link {
+  gap: 10px;
+}
+
+.tree-conc-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.tree-conc-dot.inc {
+  background: var(--amber);
+}
+
+.tree-conc-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Right Main Area ── */
+.main-area {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 40px 80px;
+}
+
+/* ── Hypothesis Card ── */
+.hyp-card {
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  position: relative;
+  background: var(--bg);
+}
+
+.hyp-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.hyp-card.validated::before { background: var(--red); }
+.hyp-card.inconclusive::before { background: var(--amber); }
+.hyp-card.invalidated::before { background: var(--text-muted); }
+
+.hyp-card.invalidated {
+  opacity: 0.55;
+}
+
+.hyp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  gap: 16px;
+}
+
+.hyp-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hyp-card-id {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.hyp-card.invalidated .hyp-card-id {
+  color: var(--text-muted);
+}
+
+.hyp-card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+.hyp-card.invalidated .hyp-card-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.hyp-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.status-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border: 1px solid;
+  flex-shrink: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.status-tag.validated { color: var(--red); border-color: var(--red); }
+.status-tag.inconclusive { color: var(--amber); border-color: var(--amber); }
+.status-tag.invalidated { color: var(--text-muted); border-color: var(--border); background: var(--bg-tint); }
+
+/* ── Tabs within card ── */
+.hyp-card-body {
+  border-top: 1px solid var(--border);
+  padding: 0 24px 24px;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding-top: 4px;
+}
+
+.tab {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all var(--transition);
+  letter-spacing: 0.3px;
+}
+
+.tab:hover { color: var(--text-secondary); }
+.tab.on { color: var(--red); border-bottom-color: var(--red); }
+
+.tab-panel { display: none; padding-top: 16px; }
+.tab-panel.on { display: block; }
+
+/* ── Evidence list ── */
+.ev-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ev-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--bg-tint);
+  border: 1px solid var(--border);
+}
+
+.ev-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ev-icon.positive { background: var(--green-bg); color: var(--green); }
+.ev-icon.negative { background: var(--red-bg); color: var(--red); }
+.ev-icon.neutral { background: var(--amber-bg); color: var(--amber); }
+.ev-icon svg { width: 12px; height: 12px; }
+
+.ev-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.ev-text code {
+  background: var(--bg-tint);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  font-size: 11px;
+  color: var(--red);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.ev-text strong { font-weight: 600; }
+
+/* ── Research steps timeline ── */
+.steps-tl {
+  position: relative;
+  padding-left: 22px;
+}
+
+.steps-tl::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: var(--border);
+}
+
+.st-item {
+  position: relative;
+  padding: 6px 0 14px;
+}
+
+.st-item:last-child { padding-bottom: 0; }
+
+.st-dot {
+  position: absolute;
+  left: -19px;
+  top: 10px;
+  width: 10px;
+  height: 10px;
+  background: var(--bg);
+  border: 2px solid var(--red);
+}
+
+.st-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.st-tool {
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--red);
+  background: var(--red-bg);
+  padding: 2px 8px;
+  margin-top: 4px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* ── Assessment ── */
+.assess {
+  padding: 12px 14px;
+  background: var(--bg-tint);
+  border-left: 2px solid var(--red);
+}
+
+.assess-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.assess-txt {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* ── Sub-hypotheses (nested inside parent card) ── */
+.sub-group {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.sub-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.sub-card {
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  position: relative;
+  background: var(--bg-tint);
+}
+
+.sub-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.sub-card.validated::before { background: var(--red); }
+.sub-card.inconclusive::before { background: var(--amber); }
+.sub-card.invalidated::before { background: var(--text-muted); }
+
+.sub-card.invalidated { opacity: 0.55; }
+
+.sub-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  gap: 12px;
+  transition: background var(--transition);
+}
+
+.sub-card-header:hover { background: var(--border); }
+
+.sub-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sub-card-id {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--red);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.sub-card.invalidated .sub-card-id { color: var(--text-muted); }
+
+.sub-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.sub-card.invalidated .sub-card-title { color: var(--text-secondary); }
+
+.sub-tag {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border: 1px solid;
+  flex-shrink: 0;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.sub-tag.validated { color: var(--red); border-color: var(--red); }
+.sub-tag.inconclusive { color: var(--amber); border-color: var(--amber); }
+.sub-tag.invalidated { color: var(--text-muted); border-color: var(--border); background: var(--bg); }
+
+.sub-chev {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 200ms ease-out;
+}
+
+.sub-card.open .sub-chev { transform: rotate(180deg); }
+
+.sub-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 300ms ease-out;
+}
+
+.sub-card-body.settled { max-height: none !important; }
+
+.sub-card-body-inner {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.sub-card-body-inner .tabs { padding-top: 0; }
+.sub-card-body-inner .ev-item { padding: 8px 10px; }
+.sub-card-body-inner .assess { margin-top: 0; padding: 10px 12px; }
+
+/* ── Conclusion Card ── */
+.conclusion-card {
+  border: 1px solid var(--text-primary);
+  border-top: 3px solid var(--text-primary);
+  padding: 24px 28px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conclusion-card.inc {
+  border-color: var(--amber);
+  border-top-color: var(--amber);
+}
+
+.conc-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.conclusion-card.inc .conc-badge { color: var(--amber); }
+
+.conc-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  line-height: 1.5;
+}
+
+.conc-pts {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conc-pts li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.conc-pts li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  background: var(--red);
+}
+
+.conclusion-card.inc .conc-pts li::before { background: var(--amber); }
+
+/* ── Mobile: hide sidebar ── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-area { padding: 20px 16px 60px; }
+  .report-header { padding: 16px; gap: 16px; }
+  .hyp-card-header { padding: 16px; }
+  .hyp-card-body { padding: 0 16px 16px; }
+}
+
+/* ── Scrollbar styling ── */
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+.sidebar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- Header: Source + Init pill -->
+<header class="report-header">
+  <div class="source-card">
+    <div class="source-badge"><span class="source-dot"></span><span id="srcBadge"></span></div>
+    <div class="source-title" id="srcTitle"></div>
+  </div>
+  <div class="init-pill">
+    <div class="init-dot">&#x2713;</div>
+    <span class="init-label">初期調査</span>
+    <span class="init-count" id="initCount"></span>
+  </div>
+</header>
+
+<!-- 2-column layout -->
+<div class="layout">
+  <!-- Left Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-title">Investigation Flow</div>
+    <ul class="sidebar-tree" id="sidebarTree"></ul>
+  </nav>
+
+  <!-- Right Main Area -->
+  <main class="main-area" id="mainArea">
+    <!-- Hypothesis cards rendered here by JS -->
+  </main>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  INVESTIGATION_DATA - Replace with actual investigation     ║
+// ╚══════════════════════════════════════════════════════════════╝
+const INVESTIGATION_DATA = {
+  source: {
+    type: "MONITOR ALERT",
+    title: "Sample Monitor — avg:system.cpu.user{host:example-host} > 80%"
+  },
+  initial_observation: {
+    steps: 6,
+    duration: "3 min"
+  },
+  conclusion: {
+    status: "root_cause_identified",
+    title: "サンプル根本原因の説明",
+    points: [
+      "サンプル証拠ポイント1",
+      "サンプル証拠ポイント2",
+      "サンプル証拠ポイント3"
+    ]
+  },
+  hypotheses: [
+    {
+      id: "H1",
+      title: "サンプル仮説1",
+      description: "サンプル仮説の詳細説明",
+      status: "validated",
+      evidence: [
+        { text: "サンプル証拠 (<code>metric</code> が <strong>異常値</strong>)", positive: true },
+        { text: "サンプル中立証拠", positive: null }
+      ],
+      research_steps: [
+        { text: "メトリクスを取得して確認", tool: "get_datadog_metric" }
+      ],
+      assessment: "サンプル評価テキスト",
+      sub_hypotheses: []
+    },
+    {
+      id: "H2",
+      title: "サンプル仮説2",
+      description: "サンプル仮説2の詳細説明",
+      status: "invalidated",
+      evidence: [
+        { text: "否定する証拠", positive: false }
+      ],
+      research_steps: [
+        { text: "ログを検索して確認", tool: "search_datadog_logs" }
+      ],
+      assessment: "この仮説は否定された",
+      sub_hypotheses: []
+    }
+  ]
+};
+
+// ── SVG Icons ──
+const IC = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+};
+
+function evIcon(p) { return p === true ? IC.check : p === false ? IC.x : IC.minus; }
+function evCls(p) { return p === true ? 'positive' : p === false ? 'negative' : 'neutral'; }
+const SL = { validated: '検証済み', inconclusive: '不確定', invalidated: '否定' };
+
+// ── Render Header ──
+function renderHeader(data) {
+  document.getElementById('srcBadge').textContent = data.source.type;
+  document.getElementById('srcTitle').textContent = data.source.title;
+  const io = data.initial_observation;
+  document.getElementById('initCount').textContent = `${io.steps} steps / ${io.duration}`;
+}
+
+// ── Render Sidebar Tree ──
+function renderSidebar(data) {
+  const tree = document.getElementById('sidebarTree');
+  let html = '';
+
+  function renderNode(h, isChild) {
+    html += `<li class="tree-node">`;
+    html += `<button class="tree-link" data-target="card-${h.id}">`;
+    html += `<span class="tree-id">${h.id}</span>`;
+    html += `<span class="tree-dot ${h.status}"></span>`;
+    html += `<span class="tree-label">${h.title}</span>`;
+    html += `</button>`;
+
+    if (h.sub_hypotheses && h.sub_hypotheses.length > 0) {
+      html += `<ul class="tree-children">`;
+      h.sub_hypotheses.forEach(sub => renderNode(sub, true));
+      html += `</ul>`;
+    }
+
+    html += `</li>`;
+  }
+
+  data.hypotheses.forEach(h => renderNode(h, false));
+
+  // Conclusion node
+  const concStatus = data.conclusion.status === 'inconclusive' ? 'inc' : '';
+  html += `<li class="tree-node tree-conclusion">`;
+  html += `<button class="tree-link" data-target="conclusion-card">`;
+  html += `<span class="tree-conc-dot ${concStatus}"></span>`;
+  html += `<span class="tree-conc-label">結論</span>`;
+  html += `</button>`;
+  html += `</li>`;
+
+  tree.innerHTML = html;
+
+  // Click handlers
+  tree.querySelectorAll('.tree-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const targetId = link.dataset.target;
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+}
+
+// ── Render Evidence Tab ──
+function renderEvidence(evidence) {
+  if (!evidence || evidence.length === 0) return '<p style="color:var(--text-muted);font-size:13px;">証拠なし</p>';
+  let html = '<ul class="ev-list">';
+  evidence.forEach(e => {
+    html += `<li class="ev-item">`;
+    html += `<span class="ev-icon ${evCls(e.positive)}">${evIcon(e.positive)}</span>`;
+    html += `<span class="ev-text">${e.text}</span>`;
+    html += `</li>`;
+  });
+  html += '</ul>';
+  return html;
+}
+
+// ── Render Steps Tab ──
+function renderSteps(steps) {
+  if (!steps || steps.length === 0) return '<p style="color:var(--text-muted);font-size:13px;">ステップなし</p>';
+  let html = '<div class="steps-tl">';
+  steps.forEach(s => {
+    html += `<div class="st-item">`;
+    html += `<div class="st-dot"></div>`;
+    html += `<div class="st-text">${s.text}</div>`;
+    if (s.tool) html += `<div class="st-tool">${s.tool}</div>`;
+    html += `</div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+// ── Render Assessment Tab ──
+function renderAssessment(assessment) {
+  if (!assessment) return '<p style="color:var(--text-muted);font-size:13px;">評価なし</p>';
+  let html = '<div class="assess">';
+  html += '<div class="assess-lbl">Assessment</div>';
+  html += `<div class="assess-txt">${assessment}</div>`;
+  html += '</div>';
+  return html;
+}
+
+// ── Render Sub-hypothesis card ──
+function renderSubCard(sub) {
+  const tabId = `sub-${sub.id}`;
+  let html = `<div class="sub-card ${sub.status}" id="card-${sub.id}">`;
+  html += `<button class="sub-card-header" onclick="toggleSub(this)">`;
+  html += `<div class="sub-card-info">`;
+  html += `<div class="sub-card-id">${sub.id}</div>`;
+  html += `<div class="sub-card-title">${sub.title}</div>`;
+  html += `</div>`;
+  html += `<span class="sub-tag ${sub.status}">${SL[sub.status]}</span>`;
+  html += `<span class="sub-chev">${IC.chev}</span>`;
+  html += `</button>`;
+  html += `<div class="sub-card-body">`;
+  html += `<div class="sub-card-body-inner">`;
+
+  // Tabs for sub-hypothesis
+  html += `<div class="tabs">`;
+  html += `<button class="tab on" onclick="switchTab(this,'${tabId}','ev')">証拠</button>`;
+  html += `<button class="tab" onclick="switchTab(this,'${tabId}','st')">調査ステップ</button>`;
+  html += `<button class="tab" onclick="switchTab(this,'${tabId}','as')">評価</button>`;
+  html += `</div>`;
+  html += `<div class="tab-panel on" data-group="${tabId}" data-tab="ev">${renderEvidence(sub.evidence)}</div>`;
+  html += `<div class="tab-panel" data-group="${tabId}" data-tab="st">${renderSteps(sub.research_steps)}</div>`;
+  html += `<div class="tab-panel" data-group="${tabId}" data-tab="as">${renderAssessment(sub.assessment)}</div>`;
+
+  html += `</div></div></div>`;
+  return html;
+}
+
+// ── Render Main Hypothesis Cards ──
+function renderMainArea(data) {
+  const main = document.getElementById('mainArea');
+  let html = '';
+
+  data.hypotheses.forEach(h => {
+    const tabId = `hyp-${h.id}`;
+    html += `<section class="hyp-card ${h.status}" id="card-${h.id}">`;
+
+    // Header
+    html += `<div class="hyp-card-header">`;
+    html += `<div class="hyp-card-info">`;
+    html += `<div class="hyp-card-id">${h.id}</div>`;
+    html += `<div class="hyp-card-title">${h.title}</div>`;
+    html += `<div class="hyp-card-desc">${h.description}</div>`;
+    html += `</div>`;
+    html += `<span class="status-tag ${h.status}">${SL[h.status]}</span>`;
+    html += `</div>`;
+
+    // Body with tabs
+    html += `<div class="hyp-card-body">`;
+    html += `<div class="tabs">`;
+    html += `<button class="tab on" onclick="switchTab(this,'${tabId}','ev')">証拠</button>`;
+    html += `<button class="tab" onclick="switchTab(this,'${tabId}','st')">調査ステップ</button>`;
+    html += `<button class="tab" onclick="switchTab(this,'${tabId}','as')">評価</button>`;
+    html += `</div>`;
+    html += `<div class="tab-panel on" data-group="${tabId}" data-tab="ev">${renderEvidence(h.evidence)}</div>`;
+    html += `<div class="tab-panel" data-group="${tabId}" data-tab="st">${renderSteps(h.research_steps)}</div>`;
+    html += `<div class="tab-panel" data-group="${tabId}" data-tab="as">${renderAssessment(h.assessment)}</div>`;
+
+    // Sub-hypotheses
+    if (h.sub_hypotheses && h.sub_hypotheses.length > 0) {
+      html += `<div class="sub-group">`;
+      html += `<div class="sub-group-label">Sub-Hypotheses</div>`;
+      h.sub_hypotheses.forEach(sub => {
+        html += renderSubCard(sub);
+      });
+      html += `</div>`;
+    }
+
+    html += `</div>`; // hyp-card-body
+    html += `</section>`;
+  });
+
+  // Conclusion Card
+  const c = data.conclusion;
+  const incCls = c.status === 'inconclusive' ? 'inc' : '';
+  html += `<section class="conclusion-card ${incCls}" id="conclusion-card">`;
+  html += `<div class="conc-badge">${c.status === 'inconclusive' ? 'INCONCLUSIVE' : 'ROOT CAUSE IDENTIFIED'}</div>`;
+  html += `<div class="conc-title">${c.title}</div>`;
+  html += `<ul class="conc-pts">`;
+  c.points.forEach(p => { html += `<li>${p}</li>`; });
+  html += `</ul>`;
+  html += `</section>`;
+
+  main.innerHTML = html;
+}
+
+// ── Tab switching ──
+function switchTab(btn, group, tab) {
+  // Deactivate all tabs in this group's tab bar
+  const tabBar = btn.parentElement;
+  tabBar.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+
+  // Show/hide panels
+  const container = tabBar.parentElement;
+  container.querySelectorAll(`.tab-panel[data-group="${group}"]`).forEach(p => {
+    p.classList.toggle('on', p.dataset.tab === tab);
+  });
+}
+
+// ── Toggle sub-hypothesis ──
+function toggleSub(btn) {
+  const card = btn.closest('.sub-card');
+  const body = card.querySelector('.sub-card-body');
+  card.classList.toggle('open');
+
+  if (card.classList.contains('open')) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.addEventListener('transitionend', function handler() {
+      body.classList.add('settled');
+      body.removeEventListener('transitionend', handler);
+    });
+  } else {
+    body.classList.remove('settled');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => { body.style.maxHeight = '0px'; });
+  }
+}
+
+// ── IntersectionObserver: auto-highlight sidebar ──
+function setupObserver() {
+  const links = document.querySelectorAll('.tree-link');
+  const sections = [];
+
+  links.forEach(link => {
+    const targetId = link.dataset.target;
+    const el = document.getElementById(targetId);
+    if (el) sections.push({ el, link });
+  });
+
+  if (sections.length === 0) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const match = sections.find(s => s.el === entry.target);
+      if (match) {
+        if (entry.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          match.link.classList.add('active');
+
+          // Scroll sidebar to keep active node visible
+          const sidebar = document.getElementById('sidebar');
+          const linkRect = match.link.getBoundingClientRect();
+          const sidebarRect = sidebar.getBoundingClientRect();
+          if (linkRect.top < sidebarRect.top || linkRect.bottom > sidebarRect.bottom) {
+            match.link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        }
+      }
+    });
+  }, {
+    rootMargin: '-10% 0px -60% 0px',
+    threshold: 0
+  });
+
+  sections.forEach(s => observer.observe(s.el));
+}
+
+// ── Initialize ──
+function init() {
+  renderHeader(INVESTIGATION_DATA);
+  renderSidebar(INVESTIGATION_DATA);
+  renderMainArea(INVESTIGATION_DATA);
+  setupObserver();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
