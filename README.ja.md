@@ -30,29 +30,15 @@ Datadog MCP Server を Claude Code に設定する必要があります。詳細
 /mcp
 ```
 
-## インストール
-
-### 方法 1: このディレクトリで Claude Code を起動する（推奨）
+## クイックスタート
 
 ```bash
+git clone https://github.com/shiina-yuichi/dd-mcp-investigator.git
 cd dd-mcp-investigator
 claude
 ```
 
-`.claude/skills/` 配下のスキルは自動検出されます。`/incident-investigation` で呼び出せます。
-
-### 方法 2: 既存プロジェクトにスキルをコピーする
-
-```bash
-cp -r /path/to/dd-mcp-investigator/.claude/skills/incident-investigation \
-      /your/project/.claude/skills/incident-investigation
-```
-
-### 方法 3: SKILL.md の内容を CLAUDE.md に貼り付ける
-
-軽量に使いたい場合は、`.claude/skills/incident-investigation/SKILL.md` の内容をプロジェクトの `CLAUDE.md` に直接コピーしてください。
-
-## 使い方
+`.claude/skills/` 配下のスキルは自動検出されます。`/incident-investigation` で呼び出せます。## 使い方
 
 ### スキルの呼び出し
 

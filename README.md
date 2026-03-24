@@ -30,29 +30,15 @@ The Datadog MCP Server must be configured in Claude Code. See [Datadog MCP Serve
 /mcp
 ```
 
-## Installation
-
-### Option 1: Run Claude Code in this directory (recommended)
+## Quick Start
 
 ```bash
+git clone https://github.com/shiina-yuichi/dd-mcp-investigator.git
 cd dd-mcp-investigator
 claude
 ```
 
-Skills in `.claude/skills/` are auto-detected. Invoke with `/incident-investigation`.
-
-### Option 2: Copy the skill into an existing project
-
-```bash
-cp -r /path/to/dd-mcp-investigator/.claude/skills/incident-investigation \
-      /your/project/.claude/skills/incident-investigation
-```
-
-### Option 3: Paste SKILL.md content into CLAUDE.md
-
-For lightweight usage, copy the contents of `.claude/skills/incident-investigation/SKILL.md` directly into your project's `CLAUDE.md`.
-
-## Usage
+Skills in `.claude/skills/` are auto-detected. Invoke with `/incident-investigation`.## Usage
 
 ### Invoke the skill
 
